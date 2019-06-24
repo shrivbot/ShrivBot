@@ -1,0 +1,10 @@
+{
+  "name": "shrivbot",
+  "version": "0.0.1",
+  "description": "Social credit score discord bot",
+  "main": "bot.js",
+  "repository": "https://github.com/Rwhytsell/ShrivBot",
+  "author": "Ryan Whytsell, Levi Butcher, Ethan Rhodes",
+  "license": "MIT",
+  "private": false
+}
