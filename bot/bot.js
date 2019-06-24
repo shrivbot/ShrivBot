@@ -1,4 +1,4 @@
-import { prefix, owner, token } from './config.json';
+import { prefix, token } from './config.json';
 import { Client } from 'discord.js';
 
 const bot = new Client({
