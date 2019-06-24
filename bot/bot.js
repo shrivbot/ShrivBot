@@ -1,6 +1,5 @@
 import { prefix, owner, token } from './config.json';
 import { Client } from 'discord.js';
-import { inspect } from 'util';
 
 const bot = new Client({
     disableEveryone: true,
