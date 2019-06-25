@@ -3,5 +3,13 @@
     "@types/pg": "^7.4.14",
     "discord.js": "^11.5.1",
     "pg": "^7.11.0"
-  }
+  },
+  "name": "ShrivBot",
+  "version": "0.0.1",
+  "description": "ShrivBot is a social credit score bot for discord",
+  "main": "bot.js",
+  "repository": "https://github.com/Rwhytsell/ShrivBot",
+  "author": "Ryan Whytsell, Levi Butcher, Ethan Rhodes",
+  "license": "MIT",
+  "private": false
 }
