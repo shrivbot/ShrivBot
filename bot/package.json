@@ -1,5 +1,7 @@
 {
   "dependencies": {
-    "discord.js": "^11.5.1"
+    "@types/pg": "^7.4.14",
+    "discord.js": "^11.5.1",
+    "pg": "^7.11.0"
   }
 }
