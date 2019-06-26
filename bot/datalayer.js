@@ -5,6 +5,9 @@ const pool;
 export default class DataLayer {
     
     constructor(databaseConfig){
+
+        // TODO: Setup config file with example config
+
         if(!databaseConfig)
         {
             Console.error("No database configuration given. Exiting")
@@ -113,20 +116,15 @@ export default class DataLayer {
                 Console.error("SEVERE: Error getting client from pool")
                 return callback(err, null);
             }
-            client.query("SELECT * FROM reports WHERE username == $1", reportingUsername, (err, result) => {
-                if(err) {
-                    Console.error("SEVERE: Error retrieving reporting user")
+            client.query("INSERT INTO reports(ReportedUser, ReportingUser, IsPraise, Comment) VALUES($1, $2, $3, $4)", 
+                [reportingUsername, reportedUsername, false, comment], 
+                (err, result) => {
                     release()
-                    return callback(err, null);
-                }
-                if (result.rows.length == 0) {
-                    initUser(username, (err, newUser) => {
-                        if (err) return callback(err, null);;
-                        
-                    })
-                    
-                }
-                return result.rows[0].score
+                    if(err) {
+                        Console.error("SEVERE: Error reporting user")
+                        return callback(err, null);
+                    }
+                    return callback(null, true)
             })
             release()
         })
@@ -134,12 +132,43 @@ export default class DataLayer {
     
     // Praise user
     praiseUser(reportingUsername, reportedUsername, comment, callback) {
-
+        pool.connect((err, client, release) => 
+        {
+            if (err) {
+                Console.error("SEVERE: Error getting client from pool")
+                return callback(err, null);
+            }
+            client.query("INSERT INTO reports(ReportedUser, ReportingUser, IsPraise, Comment) VALUES($1, $2, $3, $4)", 
+                [reportingUsername, reportedUsername, true, comment], 
+                (err, result) => {
+                    release()
+                    if(err) {
+                        Console.error("SEVERE: Error reporting user")
+                        return callback(err, null);
+                    }
+                    return callback(null, true)
+            })
+            release()
+        })
     }
 
     // Remove report/praise
     removeReport(reportId, callback) {
-
+        pool.connect((err, client, release) => 
+        {
+            if (err) {
+                Console.error("SEVERE: Error getting client from pool")
+                return callback(err, null)
+            }
+            client.query("DELETE FROM report WHERE id == $1", reportId, (err, result) => {
+                release()
+                if(err) {
+                    Console.error("SEVERE: Error deleting report")
+                    return callback(err, null)
+                }
+                return callback(null, true)
+            })
+        })
     }
 
     // Get Username ID

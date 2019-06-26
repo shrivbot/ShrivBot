@@ -7,7 +7,7 @@ const bot = new Client({
 });
 
 bot.on("ready", () => {
-    bot.user.setGame('Observing toxicity'); 
+    bot.user.setActivity('Observing toxicity'); 
     console.log(`Bot is online!\n${bot.users.size} users, in ${bot.guilds.size} servers connected.`);
 });
 
