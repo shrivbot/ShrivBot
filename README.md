@@ -1,6 +1,6 @@
 
 # ShrivBot
-> A global social credit score bot for discord, made for discord hack 2019
+> A global social credit score bot for discord, made for discord hack week 2019
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/89286313-bc0d-4cef-a136-e4880280098e/deploy-status)](https://app.netlify.com/sites/stoic-neumann-85830b/deploys)
 
