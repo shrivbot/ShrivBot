@@ -124,6 +124,7 @@ export default class DataLayer {
                         Console.error("SEVERE: Error reporting user")
                         return callback(err, null);
                     }
+                    calculateScore(username, _)
                     return callback(null, true)
             })
             release()
@@ -146,6 +147,7 @@ export default class DataLayer {
                         Console.error("SEVERE: Error reporting user")
                         return callback(err, null);
                     }
+                    calculateScore(username, _)
                     return callback(null, true)
             })
             release()
@@ -166,6 +168,8 @@ export default class DataLayer {
                     Console.error("SEVERE: Error deleting report")
                     return callback(err, null)
                 }
+
+                calculateScore(username, _)
                 return callback(null, true)
             })
         })
@@ -186,9 +190,69 @@ export default class DataLayer {
                     return callback(err, null)
                 }
                 if (result.rows.length == 0) {
-                    var newUser = initUser(username)
-                    return callback(null, newUser.id)
+
+                    initUser(username, (err, user) => {
+                        if (err) {
+                            return callback(err, null)
+                        }
+                        return callback(null, user.id)
+                    })
                 }
+                return callback(null, result.rows[0].id)
+            })
+        })
+    }
+
+    // This is used locally to update a users score when praised, reported, or if a report is removed
+    calculateScore(username, callback)
+    {
+        pool.connect((err, client, release) => 
+        {
+            if (err) {
+                Console.error("SEVERE: Error getting client from pool")
+                return callback(err, null)
+            }
+            client.query("SELECT * FROM user WHERE username == $1", username, (err, result) => {
+                if(err) {
+                    release()
+                    Console.error("SEVERE: Error retrieving user")
+                    return callback(err, null)
+                }
+                if (result.rows.length == 0) {
+                    initUser(username, (err, user) => {
+                        if (err) {
+                            return callback(err, null)
+                        }
+                        return callback(null, 500)
+                    })
+                }
+                let user = result.rows[0];
+                client.query("SELECT * FROM report WHERE ReportedUser == $1", user.id, (err, result) => {
+                    if(err) {
+                        release()
+                        Console.error("SEVERE: Error user reports to calculate score")
+                        return callback(err, null)
+                    }
+                    let score = 500;
+                    foreach(report in result)
+                    {
+                        if(report.IsPraise)
+                        {
+                            score += 10;
+                        } 
+                        else {
+                            score -= 10;
+                        }
+                    }
+                    client.query("UPDATE user SET score = $1 WHERE id == $2", [score, user.id], (err, result) => {
+                        release()
+                        if (err) {
+                            Console.error("SEVERE: Error updating users score")
+                            return callback(err, null)
+                        }
+                        return callback(null, score)
+                    })
+                })
                 return callback(null, result.rows[0].id)
             })
         })
