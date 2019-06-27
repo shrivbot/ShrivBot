@@ -168,6 +168,7 @@ export default class DataLayer {
                     Console.error("SEVERE: Error deleting report")
                     return callback(err, null)
                 }
+
                 calculateScore(username, _)
                 return callback(null, true)
             })
@@ -189,6 +190,7 @@ export default class DataLayer {
                     return callback(err, null)
                 }
                 if (result.rows.length == 0) {
+
                     initUser(username, (err, user) => {
                         if (err) {
                             return callback(err, null)
