@@ -1,8 +1,18 @@
-import { prefix, token } from './config.json';
-import { Client } from 'discord.js';
+import { prefix, token } from "./config.json";
+import { Client } from "discord.js";
+import DataLayer from "./datalayer";
+
+const config = {
+  connectionString:
+    "postgres://zoespcpd:1tM_nOhTx6f5-ohaXd9QgHasZLoGqrx0@raja.db.elephantsql.com:5432/zoespcpd"
+};
+
+const dl = new DataLayer(config);
+console.log(dl);
 
 const bot = new Client({
     disableEveryone: true,
+    
     disabledEvents: ['TYPING_START']
 });
 
@@ -37,12 +47,53 @@ bot.on("message", async message => {
 
         
         if (cmd === 'report' || cmd === 'bad') { // the first command [I don't like ping > pong]
-            let targetName = args[1].toLowerCase(); // The user
-            return; 
+            let targetName = args[0];// The user
+            let sender = message.member.user.id;
+            let text = args.slice(1).join(' ');
+            let result = dl.reportUser(targetName, sender, text, (err, isGood) => {
+                if(isGood) {
+                    console.log('is good')
+                } else {
+                    console.log(err)
+                }
+            })
+            return result; 
         }
 
         else if (cmd === 'ping') {
             return message.channel.send('pong');
+        }
+
+        else if (cmd === 'getReports') {
+            let targetName = args[0]; // The user
+            dl.getuserReports(targetName)
+            return;
+        }
+
+        else if (cmd === 'praise') {
+            let targetName = args[0];// The user
+            let sender = message.member.user.id;
+            let text = args.slice(1).join(' ');
+            let result = dl.praiseUser(targetName, sender, text, (err, isGood) => {
+                if(isGood) {
+                    console.log('is good')
+                } else {
+                    console.log(err)
+                }
+            })
+            return;
+        }
+
+        else if (cmd === 'score') {
+            let targetName = args[0];// The user
+            dl.getUserScore(targetName)
+            return;
+        }
+
+        else if (cmd === 'getid') {
+            let targetName = args[0];// The user
+            dl.getUserId(targetName)
+            return  targetName;
         }
 
         else { // if the command doesn't match, we reply with this. It should be a help command in the future.

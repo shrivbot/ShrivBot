@@ -1,5 +1,6 @@
-const { Pool } = require('pg');
-const pool;
+const { Pool } = require("pg");
+const { promisify } = require("util");
+let pool;
 
 
 export default class DataLayer {
@@ -10,13 +11,13 @@ export default class DataLayer {
 
         if(!databaseConfig)
         {
-            Console.error("No database configuration given. Exiting")
+            console.error("No database configuration given. Exiting")
             process.exit(0)
         }
         pool = new Pool(databaseConfig);
         pool.connect((err, client, release) => {
             if (err) {
-                Console.error("Error connecting to database", err.stack)
+                console.error("Error connecting to database", err.stack)
                 process.exit(0)
             }
             client.query('SELECT NOW()', (err, result) => {
@@ -48,13 +49,13 @@ export default class DataLayer {
         pool.connect((err, client, release) => 
         {
             if (err) {
-                Console.error("SEVERE: Error getting client from pool")
+                console.error("SEVERE: Error getting client from pool")
                 return callback(err, null);
             }
-            client.query("INSERT INTO User(Username, Score) VALUES($1, $2)", [username, 500], (err, result) => {
+            client.query('INSERT INTO public."user"("Username", "Score") VALUES($1, $2) RETURNING *', [username, 500], (err, result) => {
                 release()
                 if (err) {
-                    Console.error("SEVERE: Error initializing user")
+                    console.error("SEVERE: Error initializing user")
                     return callback(err, null);
                 }
                 callback(null, result)
@@ -67,13 +68,13 @@ export default class DataLayer {
         pool.connect((err, client, release) => 
         {
             if (err) {
-                Console.error("SEVERE: Error getting client from pool")
+                console.error("SEVERE: Error getting client from pool")
                 return callback(err, null);
             }
             client.query("SELECT Score FROM user WHERE Username == $1", username, (err, result) => {
                 release()
                 if(err) {
-                    Console.error("SEVERE: Error retrieving user")
+                    console.error("SEVERE: Error retrieving user")
                     return callback(err, null);
                 }
                 if (result.rows.length == 0) {
@@ -90,13 +91,13 @@ export default class DataLayer {
         pool.connect((err, client, release) => 
         {
             if (err) {
-                Console.error("SEVERE: Error getting client from pool")
+                console.error("SEVERE: Error getting client from pool")
                 return callback(err, null);
             }
             client.query("SELECT * FROM reports WHERE username == $1", username, (err, result) => {
                 release()
                 if(err) {
-                    Console.error("SEVERE: Error retrieving user")
+                    console.error("SEVERE: Error retrieving user")
                     return callback(err, null);
                 }
                 if (result.rows.length == 0) {
@@ -110,21 +111,27 @@ export default class DataLayer {
 
     // Report user
     reportUser(reportingUsername, reportedUsername, comment, callback) {
-        pool.connect((err, client, release) => 
+        pool.connect(async (err, client, release) => 
         {
             if (err) {
-                Console.error("SEVERE: Error getting client from pool")
+                console.error("SEVERE: Error getting client from pool")
                 return callback(err, null);
             }
-            client.query("INSERT INTO reports(ReportedUser, ReportingUser, IsPraise, Comment) VALUES($1, $2, $3, $4)", 
-                [reportingUsername, reportedUsername, false, comment], 
+
+            const reportingUser = await (promisify(this.initUser))(reportingUsername)
+            const reportedUser = await (promisify(this.initUser))(reportedUsername)
+
+            client.query('INSERT INTO public.reports("ReportedUser", "ReportingUser", "IsPraise", "Comment") VALUES($1, $2, $3, $4)', 
+                [reportedUser.rows[0].ID, reportingUser.rows[0].ID, false, comment], 
                 (err, result) => {
                     release()
                     if(err) {
-                        Console.error("SEVERE: Error reporting user")
+                        console.error("SEVERE: Error reporting user")
                         return callback(err, null);
                     }
-                    calculateScore(username, _)
+                    this.calculateScore(reportedUsername, (err, isGood) => {
+                    console.log(err);
+                })
                     return callback(null, true)
             })
             release()
@@ -133,18 +140,21 @@ export default class DataLayer {
     
     // Praise user
     praiseUser(reportingUsername, reportedUsername, comment, callback) {
-        pool.connect((err, client, release) => 
+        pool.connect(async (err, client, release) => 
         {
             if (err) {
-                Console.error("SEVERE: Error getting client from pool")
+                console.error("SEVERE: Error getting client from pool")
                 return callback(err, null);
             }
+            const reportingUser = await promisify(this.initUser(reportingUsername))
+            const reportedUser = await promisify(this.initUser(reportedUsername))
+
             client.query("INSERT INTO reports(ReportedUser, ReportingUser, IsPraise, Comment) VALUES($1, $2, $3, $4)", 
-                [reportingUsername, reportedUsername, true, comment], 
+                [reportedUser.ID, reportingUser.ID, true, comment], 
                 (err, result) => {
                     release()
                     if(err) {
-                        Console.error("SEVERE: Error reporting user")
+                        console.error("SEVERE: Error reporting user")
                         return callback(err, null);
                     }
                     calculateScore(username, _)
@@ -159,13 +169,13 @@ export default class DataLayer {
         pool.connect((err, client, release) => 
         {
             if (err) {
-                Console.error("SEVERE: Error getting client from pool")
+                console.error("SEVERE: Error getting client from pool")
                 return callback(err, null)
             }
             client.query("DELETE FROM report WHERE id == $1", reportId, (err, result) => {
                 release()
                 if(err) {
-                    Console.error("SEVERE: Error deleting report")
+                    console.error("SEVERE: Error deleting report")
                     return callback(err, null)
                 }
 
@@ -180,13 +190,13 @@ export default class DataLayer {
         pool.connect((err, client, release) => 
         {
             if (err) {
-                Console.error("SEVERE: Error getting client from pool")
+                console.error("SEVERE: Error getting client from pool")
                 return callback(err, null)
             }
             client.query("SELECT * FROM user WHERE username == $1", username, (err, result) => {
                 release()
                 if(err) {
-                    Console.error("SEVERE: Error retrieving user")
+                    console.error("SEVERE: Error retrieving user")
                     return callback(err, null)
                 }
                 if (result.rows.length == 0) {
@@ -209,13 +219,13 @@ export default class DataLayer {
         pool.connect((err, client, release) => 
         {
             if (err) {
-                Console.error("SEVERE: Error getting client from pool")
+                console.error("SEVERE: Error getting client from pool")
                 return callback(err, null)
             }
-            client.query("SELECT * FROM user WHERE username == $1", username, (err, result) => {
+            client.query('SELECT * FROM public.user WHERE "Username" = $1', [username], (err, result) => {
                 if(err) {
                     release()
-                    Console.error("SEVERE: Error retrieving user")
+                    console.error("SEVERE: Error retrieving user")
                     return callback(err, null)
                 }
                 if (result.rows.length == 0) {
@@ -227,27 +237,29 @@ export default class DataLayer {
                     })
                 }
                 let user = result.rows[0];
-                client.query("SELECT * FROM report WHERE ReportedUser == $1", user.id, (err, result) => {
+                console.log(user);
+                client.query('SELECT * FROM public.reports WHERE "ReportedUser" = $1', [user.id], (err, result) => {
                     if(err) {
                         release()
-                        Console.error("SEVERE: Error user reports to calculate score")
+                        console.error("SEVERE: Error user reports to calculate score")
                         return callback(err, null)
                     }
+                    console.log(result);
                     let score = 500;
-                    foreach(report in result)
+                    result.fields.forEach(report =>
                     {
-                        if(report.IsPraise)
+                        if (report.IsPraise)
                         {
                             score += 10;
                         } 
                         else {
                             score -= 10;
                         }
-                    }
-                    client.query("UPDATE user SET score = $1 WHERE id == $2", [score, user.id], (err, result) => {
+                    });
+                    client.query("UPDATE public.user SET score = $1 WHERE id == $2", [score, user.id], (err, result) => {
                         release()
                         if (err) {
-                            Console.error("SEVERE: Error updating users score")
+                            console.error("SEVERE: Error updating users score")
                             return callback(err, null)
                         }
                         return callback(null, score)
